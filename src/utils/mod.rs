@@ -1,3 +1,5 @@
+mod atomic_wait;
+
 use std::hash::Hasher;
 use std::hash::{DefaultHasher, Hash};
 
