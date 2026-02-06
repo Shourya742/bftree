@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::DISK_PAGE_SIZE;
 
 mod memory_vfs;
+mod std_vfs;
 
 /// Similar to `std::io::Write` and `std::io::Read`, but without &mut self, i.e, no locking
 pub(crate) trait VfsImpl: Send + Sync {
