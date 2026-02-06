@@ -1,6 +1,7 @@
 #![allow(warnings)]
 
 mod fs;
+mod utils;
 
 pub(crate) const INNER_NODE_SIZE: usize = 4096;
 pub(crate) const DISK_PAGE_SIZE: usize = 4096;

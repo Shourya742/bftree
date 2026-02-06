@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::DISK_PAGE_SIZE;
 
+mod io_uring_vfs;
 mod memory_vfs;
 mod std_direct_vfs;
 mod std_vfs;
