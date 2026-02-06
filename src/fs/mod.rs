@@ -2,6 +2,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::DISK_PAGE_SIZE;
 
+mod memory_vfs;
+
 /// Similar to `std::io::Write` and `std::io::Read`, but without &mut self, i.e, no locking
 pub(crate) trait VfsImpl: Send + Sync {
     fn read(&self, offset: usize, buf: &mut [u8]);
