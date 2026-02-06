@@ -86,11 +86,7 @@ impl IoUringVfs {
         let raw_fd = unsafe {
             libc::open(
                 path_cstr.as_ptr(),
-                libc::O_DIRECT
-                    | libc::O_RDWR
-                    | libc::O_CREAT
-                    | libc::S_IRUSR as i32
-                    | libc::S_IWUSR as i32,
+                libc::O_DIRECT | libc::O_RDWR | libc::O_CREAT,
             )
         };
         assert!(
@@ -206,5 +202,59 @@ impl VfsImpl for IoUringVfs {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{alloc::Layout, str::FromStr};
+
+    use super::*;
+
+    #[test]
+    fn test_iouring_vfs_open() {
+        let file_path = PathBuf::from_str("target")
+            .unwrap()
+            .join("test_io_uring_vfs.db");
+
+        let vfs = IoUringVfs::open(&file_path);
+        assert!(vfs.file.metadata().is_ok());
+        std::fs::remove_file(&file_path).expect("Failed to remove test file");
+    }
+
+    #[test]
+    fn test_read_write_operations() {
+        let file_path = PathBuf::from_str("target")
+            .unwrap()
+            .join("test_read_write_operations.db");
+
+        // make and write file to file_path
+        std::fs::write(&file_path, "This is a test file for IoUringVfs.").unwrap();
+
+        let vfs = IoUringVfs::open(&file_path);
+
+        let buf_size = 512;
+        let buf_layout = Layout::from_size_align(buf_size, buf_size).unwrap();
+        let write_buf_ptr = unsafe { std::alloc::alloc(buf_layout) };
+        let write_buf = unsafe { std::slice::from_raw_parts_mut(write_buf_ptr, buf_size) };
+
+        for i in 0..write_buf.len() {
+            write_buf[i] = i as u8;
+        }
+
+        let offset = 0;
+        vfs.write(offset, write_buf);
+
+        // we need to alloc zeroed here, ow the memory sanitizer will complain (I believe it is a false positive)
+        let read_buf_ptr = unsafe { std::alloc::alloc_zeroed(buf_layout) };
+        let read_buf = unsafe { std::slice::from_raw_parts_mut(read_buf_ptr, buf_size) };
+        vfs.read(offset, read_buf);
+
+        assert_eq!(read_buf, write_buf, "Read data does not match written data");
+
+        unsafe { std::alloc::dealloc(write_buf_ptr, buf_layout) };
+        unsafe { std::alloc::dealloc(read_buf_ptr, buf_layout) };
+
+        std::fs::remove_file(file_path).expect("Failed to remove test file");
     }
 }
